@@ -1,7 +1,8 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.http import HttpResponse
 from django.contrib.auth.hashers import make_password, check_password
 from .models import User
+from .forms import LoginForm
 
 def register(request):
     if request.method == 'GET':
@@ -30,8 +31,30 @@ def register(request):
         return render(request, 'register.html', res_data)
 
 def login(request):
-    if request.method == 'GET':
-        return render(request, 'login.html')
-    elif request.method == 'POST':
-        userid = request.POST.get('userid', None)
-        password = request.POST.get('password', None)
+    if request.method == 'POST':
+        form = LoginForm(request.POST)
+        if form.is_valid():
+            return redirect('/')
+    else:
+        form = LoginForm()
+    return render(request, 'login.html', {'form' : form})
+
+def logout(request):
+    if request.session.get('user'):
+        del(request.session['user'])
+    
+    return redirect('/')
+
+def home(request):
+    user_id = request.session.get('user')
+
+    if user_id:
+        user = User.objects.get(pk = user_id)
+        return HttpResponse(user.username + '님, 환영합니다')
+    else:
+        res_data = {}
+        res_data['error'] = '일치하는 아이디가 없습니다'
+        return render(request, 'login.html', res_data)
+
+    
+    return HttpResponse('Home')
